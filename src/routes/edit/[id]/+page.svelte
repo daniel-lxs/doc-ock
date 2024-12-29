@@ -7,10 +7,10 @@
 	import { LoaderCircle } from 'lucide-svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import { toast } from 'svelte-sonner';
 	import type { PageServerData } from './$types';
 
 	let isPublishing = $state(false);
-	let error = $state<string | null>(null);
 
 	let { data }: { data: PageServerData } = $props();
 	let enteredEditCode = $state('');
@@ -22,51 +22,38 @@
 
 	async function publish() {
 		if (!enteredEditCode) {
+			toast.error('Edit code is required');
 			editCodeError = 'Edit code is required';
 			return;
 		}
 
 		isPublishing = true;
-		const response = await fetch(`/api/doc/${id}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				'X-Edit-Code': enteredEditCode
-			},
-			body: JSON.stringify({ markdown: markdownContent })
-		});
+		try {
+			const response = await fetch(`/api/doc/${id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Edit-Code': enteredEditCode
+				},
+				body: JSON.stringify({ markdown: markdownContent })
+			});
 
-		if (response.ok) {
-			await response.json();
-			goto(`/view/${id}`);
-		} else {
-			error = 'Failed to publish document';
+			if (response.ok) {
+				toast.success('Document published successfully');
+				await response.json();
+				goto(`/view/${id}`);
+			} else {
+				toast.error('Failed to publish document');
+			}
+		} catch (error) {
+			toast.error('An unexpected error occurred');
+		} finally {
+			isPublishing = false;
 		}
-		isPublishing = false;
 	}
 </script>
 
-<div class="container mx-auto min-h-screen space-y-4 bg-background p-4 dark:bg-background-dark">
-	{#if error}
-		<div class="alert alert-error rounded-lg bg-red-500/10 p-4 text-red-600 dark:text-red-400">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-6 w-6 shrink-0"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-				/>
-			</svg>
-			<span>{error}</span>
-		</div>
-	{/if}
-
+<div class="dark:bg-background-dark container mx-auto min-h-screen space-y-4 bg-background p-4">
 	{#if id}
 		<div class="mb-4">
 			<label class="mb-1 block text-sm font-medium" for="edit-code"> Edit Code </label>
