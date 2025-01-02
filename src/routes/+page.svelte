@@ -56,6 +56,7 @@
 			const data = (await response.json()) as PublishResponse;
 			editCode = data.editCode;
 			documentId = data.documentId;
+			currentView = 'view3';
 		} else {
 			error = 'Failed to publish document';
 		}
