@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { marked } from 'marked';
 	import { Button } from '$lib/components/ui/button';
-	import { LoaderCircle } from 'lucide-svelte';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import { Textarea } from '$lib/components/ui/textarea';
+	import { LoaderCircle, TriangleAlert, Copy, CloudDownload, ArrowLeft } from 'lucide-svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { CloudDownload } from 'lucide-svelte';
 	import type { ActionResult } from '@sveltejs/kit';
+	import Editor from '../lib/components/editor/editor.svelte';
+	import { toast } from 'svelte-sonner';
 
+	let currentView = $state<'view1' | 'view2' | 'view3'>('view1');
 	let url = $state('');
 	let loading = $state(false);
 	let isPublishing = $state(false);
@@ -30,13 +29,20 @@
 			loading = false;
 			if (result.type === 'success') {
 				markdownContent = result.data?.markdown || '';
+				currentView = 'view2';
 			} else if (result.type === 'error') {
 				error = 'Failed to parse URL';
 			}
 		};
 	};
 
-	async function publish() {
+	function handleNavigateBack() {
+		currentView = 'view1';
+		url = '';
+		markdownContent = '';
+	}
+
+	async function handlePublish() {
 		isPublishing = true;
 		const response = await fetch('/api/doc', {
 			method: 'POST',
@@ -56,7 +62,7 @@
 		isPublishing = false;
 	}
 
-	function exportMarkdown() {
+	function handleExport() {
 		const blob = new Blob([markdownContent], { type: 'text/plain;charset=utf-8' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -67,100 +73,116 @@
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 	}
+
+	async function copyToClipboard(text: string, message: string): Promise<void> {
+		await navigator.clipboard.writeText(text);
+		toast.success(message);
+	}
+
+	function getDocumentUrl(): string {
+		if (!documentId) return '';
+		return `${window.location.origin}/view/${documentId}`;
+	}
 </script>
 
-<main class="container mx-auto max-w-2xl p-8">
-	<div class="mb-8 flex items-center gap-4">
-		<h1
-			class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-5xl font-bold text-transparent"
-		>
-			Doc Ock
-		</h1>
-		<CloudDownload class="h-10 w-10 text-primary" />
-	</div>
-	<p class="text-muted-foreground mb-8 text-lg">Convert any webpage to a clean markdown</p>
-
-	<form method="POST" action="?/parse" use:enhance={submit} class="flex flex-col gap-6">
-		<div class="flex w-full flex-col gap-1.5">
-			<Label for="url">Enter URL</Label>
-			<Input
-				type="url"
-				id="url"
-				name="url"
-				bind:value={url}
-				placeholder="https://www.example.com"
-				required
-			/>
+<main class="container mx-auto max-w-3xl p-8">
+	{#if currentView === 'view1'}
+		<div class="mb-8 flex items-center gap-4">
+			<h1
+				class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-5xl font-bold text-transparent"
+			>
+				Doc Ock
+			</h1>
+			<CloudDownload class="h-10 w-10 text-primary" />
 		</div>
+		<p class="mb-8 text-lg text-muted-foreground">Convert any webpage to a clean markdown</p>
 
-		<div class="flex gap-4">
-			<Button type="submit" disabled={loading}>
-				{#if loading}
-					<LoaderCircle class="mr-2 animate-spin" />
-					Parsing...
-				{:else}
-					Parse
-				{/if}
-			</Button>
-		</div>
-	</form>
-
-	{#if markdownContent}
-		<div class="mt-8 space-y-4">
-			<Tabs.Root value="text" class="w-full">
-				<Tabs.List>
-					<Tabs.Trigger value="text">Text</Tabs.Trigger>
-					<Tabs.Trigger value="preview">Preview</Tabs.Trigger>
-					<Tabs.Trigger value="how">How</Tabs.Trigger>
-				</Tabs.List>
-				<Tabs.Content value="text">
-					<Textarea rows={20} bind:value={markdownContent} />
-				</Tabs.Content>
-				<Tabs.Content value="preview">
-					<div class="prose max-w-none dark:prose-invert">
-						{@html marked.parse(markdownContent)}
-					</div>
-				</Tabs.Content>
-				<Tabs.Content value="how">
-					<div class="prose max-w-none dark:prose-invert">
-						<h2>Markdown Guide</h2>
-						<p>Here are some basic Markdown syntax examples:</p>
-						<ul>
-							<li><strong>Bold</strong>: `**text**`</li>
-							<li><em>Italic</em>: `*text*`</li>
-							<li><code>Code</code>: `` `code` ``</li>
-							<li>
-								<a href="/">Link</a>: `[Link](https://example.com)`
-							</li>
-							<li>List: `- Item`</li>
-						</ul>
-					</div>
-				</Tabs.Content>
-			</Tabs.Root>
-
-			<div class="flex gap-4">
-				<Button variant="default" onclick={publish} disabled={isPublishing}>
-					{#if isPublishing}
-						<LoaderCircle class="mr-2 animate-spin" />
-						Publishing...
-					{:else}
-						Publish
-					{/if}
-				</Button>
-				<Button variant="outline" onclick={exportMarkdown}>Export</Button>
+		<form method="POST" action="?/parse" use:enhance={submit} class="flex flex-col gap-6">
+			<div class="flex w-full flex-col gap-1.5">
+				<Label for="url">Enter URL</Label>
+				<Input
+					type="url"
+					id="url"
+					name="url"
+					bind:value={url}
+					placeholder="https://www.example.com"
+					required
+				/>
 			</div>
 
-			{#if editCode}
-				<div
-					class="mt-4 rounded-lg bg-green-50 p-4 text-green-700 dark:bg-green-900/10 dark:text-green-400"
-				>
-					<p>Your edit code: <strong>{editCode}</strong></p>
-					<p class="mt-2 text-sm">
-						Save this code to edit this document in the future. It will not be shown again.
-					</p>
+			<div class="flex gap-4">
+				<Button type="submit" disabled={loading}>
+					{#if loading}
+						<LoaderCircle class="mr-2 animate-spin" />
+						Parsing...
+					{:else}
+						Parse
+					{/if}
+				</Button>
+			</div>
+			{#if error}
+				<div class="flex items-center gap-2">
+					<TriangleAlert class="h-4 w-4 text-red-500" />
+					<p class="text-red-500">{error}</p>
 				</div>
-				<Button variant="default" href={`/view/${documentId}`}>View Published Document</Button>
 			{/if}
+		</form>
+	{:else if currentView === 'view2'}
+		<Editor
+			bind:markdownContent
+			{isPublishing}
+			{error}
+			{handleNavigateBack}
+			{handlePublish}
+			{handleExport}
+		/>
+	{:else if currentView === 'view3'}
+		{@const documentUrl = getDocumentUrl()}
+		<div class="mt-8 space-y-6">
+			<div class="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+				<h2 class="mb-4 text-xl font-semibold">Document Published Successfully! 🎉</h2>
+
+				<div class="space-y-4">
+					<div>
+						<Label class="mb-2 block">Document URL</Label>
+						<div class="flex items-center gap-2">
+							<Input value={documentUrl} readonly />
+							<Button
+								variant="outline"
+								size="icon"
+								onclick={() => copyToClipboard(documentUrl, 'URL copied to clipboard!')}
+							>
+								<Copy class="h-4 w-4" />
+							</Button>
+						</div>
+					</div>
+
+					<div>
+						<Label class="mb-2 block">Edit Code</Label>
+						<div class="flex items-center gap-2">
+							<Input value={editCode} readonly />
+							<Button
+								variant="outline"
+								size="icon"
+								onclick={() => copyToClipboard(editCode || '', 'Edit code copied to clipboard!')}
+							>
+								<Copy class="h-4 w-4" />
+							</Button>
+						</div>
+						<p class="mt-1 text-sm text-muted-foreground">
+							Save this code to edit your document in the future
+						</p>
+					</div>
+
+					<div class="flex gap-3 pt-2">
+						<Button variant="default" href={`/view/${documentId}`}>View Document</Button>
+						<Button variant="outline" onclick={handleExport}>
+							<CloudDownload class="mr-2 h-4 w-4" />
+							Export
+						</Button>
+					</div>
+				</div>
+			</div>
 		</div>
 	{/if}
 </main>
