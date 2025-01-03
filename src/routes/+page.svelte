@@ -88,7 +88,7 @@
 
 <main class="container mx-auto max-w-3xl p-8">
 	{#if currentView === 'view1'}
-		<div class="mb-8 flex items-center gap-4">
+		<div class="mb-8 flex items-center justify-center gap-4">
 			<h1
 				class="text-5xl font-bold text-primary"
 				style="font-family: 'Inter Variable', sans-serif;"
