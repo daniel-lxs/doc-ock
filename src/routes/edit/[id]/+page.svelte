@@ -6,9 +6,10 @@
 	import { Input } from '$lib/components/ui/input';
 	import { LoaderCircle } from 'lucide-svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import { Textarea } from '$lib/components/ui/textarea';
 	import { toast } from 'svelte-sonner';
 	import type { PageServerData } from './$types';
+	import MarkdownHowto from '$lib/components/markdown-howto/markdown-howto.svelte';
+	import Editor from '$lib/components/editor/editor.svelte';
 
 	let isPublishing = $state(false);
 
@@ -51,6 +52,18 @@
 			isPublishing = false;
 		}
 	}
+
+  function handleExport() {
+		const blob = new Blob([markdownContent], { type: 'text/plain;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = `document.txt`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	}
 </script>
 
 <div class="dark:bg-background-dark container mx-auto min-h-screen space-y-4 bg-background p-4">
@@ -76,7 +89,13 @@
 			<Tabs.Trigger value="how">How</Tabs.Trigger>
 		</Tabs.List>
 		<Tabs.Content value="text">
-			<Textarea rows={100} bind:value={markdownContent} />
+			<Editor
+				bind:markdownContent
+				isPublishing={isPublishing}
+				handlePublish={publish}
+				handleExport={handleExport}
+				handleNavigateBack={() => goto(`/view/${id}`)}
+			/>
 		</Tabs.Content>
 		<Tabs.Content value="preview">
 			<div class="prose max-w-none dark:prose-invert">
@@ -84,19 +103,7 @@
 			</div>
 		</Tabs.Content>
 		<Tabs.Content value="how">
-			<div class="prose max-w-none dark:prose-invert">
-				<h2>Markdown Guide</h2>
-				<p>Here are some basic Markdown syntax examples:</p>
-				<ul>
-					<li><strong>Bold</strong>: `**text**`</li>
-					<li><em>Italic</em>: `*text*`</li>
-					<li><code>Code</code>: `` `code` ``</li>
-					<li>
-						<a href="/">Link</a>: `[Link](https://example.com)`
-					</li>
-					<li>List: `- Item`</li>
-				</ul>
-			</div>
+			<MarkdownHowto />
 		</Tabs.Content>
 	</Tabs.Root>
 

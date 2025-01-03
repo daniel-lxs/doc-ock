@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
-	import { LoaderCircle, TriangleAlert, Copy, CloudDownload, ArrowLeft } from 'lucide-svelte';
+	import { LoaderCircle, TriangleAlert, Copy, CloudDownload } from 'lucide-svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import type { ActionResult } from '@sveltejs/kit';
@@ -12,7 +12,6 @@
 	let url = $state('');
 	let loading = $state(false);
 	let isPublishing = $state(false);
-	let error = $state<string | null>(null);
 	let editCode = $state<string | null>(null);
 	let documentId = $state<string | null>(null);
 	let markdownContent = $state('');
@@ -31,7 +30,7 @@
 				markdownContent = result.data?.markdown || '';
 				currentView = 'view2';
 			} else if (result.type === 'error') {
-				error = 'Failed to parse URL';
+				toast.error('Failed to parse URL');
 			}
 		};
 	};
@@ -58,7 +57,7 @@
 			documentId = data.documentId;
 			currentView = 'view3';
 		} else {
-			error = 'Failed to publish document';
+			toast.error('Failed to publish document');
 		}
 		isPublishing = false;
 	}
@@ -121,18 +120,11 @@
 				</Button>
 				</div>
 			</div>
-			{#if error}
-				<div class="flex items-center gap-2">
-					<TriangleAlert class="h-4 w-4 text-red-500" />
-					<p class="text-red-500">{error}</p>
-				</div>
-			{/if}
 		</form>
 	{:else if currentView === 'view2'}
 		<Editor
 			bind:markdownContent
 			{isPublishing}
-			{error}
 			{handleNavigateBack}
 			{handlePublish}
 			{handleExport}
