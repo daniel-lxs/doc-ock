@@ -90,29 +90,28 @@
 	{#if currentView === 'view1'}
 		<div class="mb-8 flex items-center gap-4">
 			<h1
-				class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-5xl font-bold text-transparent"
+				class="text-5xl font-bold text-primary"
+				style="font-family: 'Inter Variable', sans-serif;"
 			>
 				Doc Ock
 			</h1>
-			<CloudDownload class="h-10 w-10 text-primary" />
+			<CloudDownload class="h-10 w-10" />
 		</div>
-		<p class="mb-8 text-lg text-muted-foreground">Convert any webpage to a clean markdown</p>
+		<p class="mb-8 text-lg text-muted-foreground text-center">Convert any webpage to a clean markdown</p>
 
-		<form method="POST" action="?/parse" use:enhance={submit} class="flex flex-col gap-6">
-			<div class="flex w-full flex-col gap-1.5">
+		<form method="POST" action="?/parse" use:enhance={submit} class="flex flex-col gap-6 items-center">
+			<div class="w-full">
 				<Label for="url">Enter URL</Label>
-				<Input
-					type="url"
-					id="url"
-					name="url"
-					bind:value={url}
-					placeholder="https://www.example.com"
-					required
-				/>
-			</div>
-
-			<div class="flex gap-4">
-				<Button type="submit" disabled={loading}>
+				<div class="flex gap-4">
+					<Input
+						type="url"
+						id="url"
+						name="url"
+						bind:value={url}
+						placeholder="https://www.example.com"
+						required
+					/>
+					<Button type="submit" disabled={loading}>
 					{#if loading}
 						<LoaderCircle class="mr-2 animate-spin" />
 						Parsing...
@@ -120,6 +119,7 @@
 						Parse
 					{/if}
 				</Button>
+				</div>
 			</div>
 			{#if error}
 				<div class="flex items-center gap-2">
